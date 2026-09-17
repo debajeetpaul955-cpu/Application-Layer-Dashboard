@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application Layer Protocol Visualizer</title>
+    <meta name="description" content="Dual-Panel Computer Networks Application Layer Protocol Visualizer simulating DNS, HTTP, and SMTP protocols.">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+    <!-- TOP HEADER -->
+    <header class="top-bar">
+        <div class="brand">
+            <div class="brand-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                </svg>
+            </div>
+            <div>
+                <h1>Application Layer Protocol Visualizer</h1>
+                <p class="subtitle">Computer Networks • Dual-Panel Protocol & Activity Simulation</p>
+            </div>
+        </div>
+
+        <div class="header-badges">
+            <div class="simulation-tag" title="Educational protocol packet simulation without real raw socket capture">
+                <span class="pulse-dot sim"></span>
+                <span>SIMULATION MODE</span>
+            </div>
+            <div class="status-tag" id="systemStatusTag">
+                <span class="pulse-dot live" id="statusDot"></span>
+                <span id="systemStatusText">System Idle</span>
+            </div>
+        </div>
+    </header>
+
+
+    <!-- MAIN TWO-PANEL DASHBOARD -->
+    <main class="dashboard">
+
+        <!-- ========================================== -->
+        <!-- LEFT PANEL: ACTIVITY PANEL                 -->
+        <!-- ========================================== -->
+        <section class="activity-panel" aria-label="Activity Selection Panel">
+
+            <div class="panel-header">
+                <div>
+                    <h2>Application Activities</h2>
+                    <p>Select an application layer service to simulate</p>
+                </div>
+                <span class="panel-badge">INPUT CONTROLS</span>
+            </div>
+
+            <!-- BROWSING ACTIVITY CARD -->
+            <div class="activity-card" id="browsingCard">
+                <div class="activity-header">
+                    <div class="activity-title">
+                        <span class="activity-icon icon-browsing">🌐</span>
+                        <div>
+                            <h3>Web Browsing</h3>
+                            <p class="protocol-chips">
+                                <span class="chip dns">DNS</span>
+                                <span class="chip-plus">+</span>
+                                <span class="chip http">HTTP/1.1</span>
+                            </p>
+                        </div>
+                    </div>
+                    <span class="activity-badge" id="browsingStatusBadge">Ready</span>
+                </div>
+
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="url">Target Domain or URL</label>
+                        <div class="input-with-prefix">
+                            <span class="input-prefix">http://</span>
+                            <input
+                                type="text"
+                                id="url"
+                                placeholder="example.com"
+                                value="example.com"
+                                autocomplete="off"
+                                spellcheck="false"
+                            >
+                        </div>
+                    </div>
+
+                    <div class="activity-actions">
+                        <button id="visitBtn" class="btn btn-primary">
+                            <span class="btn-icon">⚡</span> Visit Website
+                        </button>
+                    </div>
+
+                    <div class="activity-feedback" id="browsingFeedback" aria-live="polite"></div>
+                </div>
+            </div>
+
+
+            <!-- MAIL ACTIVITY CARD -->
+            <div class="activity-card" id="mailCard">
+                <div class="activity-header">
+                    <div class="activity-title">
+                        <span class="activity-icon icon-mail">📧</span>
+                        <div>
+                            <h3>Email Client</h3>
+                            <p class="protocol-chips">
+                                <span class="chip dns">DNS (MX)</span>
+                                <span class="chip-plus">+</span>
+                                <span class="chip smtp">SMTP</span>
+                            </p>
+                        </div>
+                    </div>
+                    <span class="activity-badge" id="mailStatusBadge">Ready</span>
+                </div>
+
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="mailTo">Recipient (To)</label>
+                        <input
+                            type="email"
+                            id="mailTo"
+                            placeholder="receiver@example.com"
+                            value="receiver@example.com"
+                            autocomplete="off"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="mailSubject">Subject</label>
+                        <input
+                            type="text"
+                            id="mailSubject"
+                            placeholder="Network Project Submission"
+                            value="Project Status Report"
+                            autocomplete="off"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="mailBody">Message Body</label>
+                        <textarea
+                            id="mailBody"
+                            rows="2"
+                            placeholder="Enter email content..."
+                        >Hello from the Application Layer Protocol Visualizer!</textarea>
+                    </div>
+
+                    <div class="activity-actions">
+                        <button id="sendMailBtn" class="btn btn-primary">
+                            <span class="btn-icon">✉</span> Send Mail (SMTP)
+                        </button>
+                    </div>
+
+                    <div class="activity-feedback" id="mailFeedback" aria-live="polite"></div>
+                </div>
+            </div>
+
+
+            <!-- STREAMING ACTIVITY CARD -->
+            <div class="activity-card" id="streamingCard">
+                <div class="activity-header">
+                    <div class="activity-title">
+                        <span class="activity-icon icon-stream">🎬</span>
+                        <div>
+                            <h3>Media Streaming</h3>
+                            <p class="protocol-chips">
+                                <span class="chip dns">DNS</span>
+                                <span class="chip-plus">+</span>
+                                <span class="chip http">HTTP HLS Chunking</span>
+                            </p>
+                        </div>
+                    </div>
+                    <span class="activity-badge" id="streamingStatusBadge">Ready</span>
+                </div>
+
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="quality">Stream Quality / Bitrate</label>
+                        <select id="quality">
+                            <option value="360p">360p (Standard Definition • 800 kbps)</option>
+                            <option value="480p">480p (Enhanced Definition • 1400 kbps)</option>
+                            <option value="720p">720p (High Definition • 2800 kbps)</option>
+                            <option value="1080p" selected>1080p (Full HD • 5000 kbps)</option>
+                        </select>
+                    </div>
+
+                    <div class="stream-controls">
+                        <button id="playBtn" class="btn btn-primary">
+                            <span class="btn-icon">▶</span> Play Stream
+                        </button>
+                        <button id="pauseBtn" class="btn btn-secondary" disabled>
+                            <span class="btn-icon">⏸</span> Pause
+                        </button>
+                    </div>
+
+                    <!-- SIMULATED VIDEO PLAYER WIDGET -->
+                    <div class="video-player-sim" id="videoPlayerWidget">
+                        <div class="player-screen">
+                            <div class="player-overlay-top">
+                                <span class="video-title">video_stream_hls.m3u8</span>
+                                <span class="quality-tag" id="playerQualityTag">1080p</span>
+                            </div>
+                            <div class="player-center-status" id="playerPlaybackState">
+                                <span class="state-icon">⏹</span>
+                                <span class="state-text">STANDBY</span>
+                            </div>
+                            <div class="player-overlay-bottom">
+                                <span id="playerTimeDisplay">00:00 / 00:24</span>
+                                <span id="playerResolutionDisplay">1920x1080 @ 60fps</span>
+                            </div>
+                        </div>
+
+                        <!-- BUFFER PROGRESS -->
+                        <div class="buffer-section">
+                            <div class="buffer-meta">
+                                <span>Playback Buffer Status</span>
+                                <span id="bufferPercentText">0%</span>
+                            </div>
+                            <div class="buffer-track">
+                                <div class="buffer-bar" id="bufferFillBar" style="width: 0%;"></div>
+                            </div>
+                        </div>
+
+                        <!-- SEGMENTS STATUS -->
+                        <div class="segments-grid">
+                            <div class="segment-pill" id="seg1">
+                                <span class="seg-name">Seg 001</span>
+                                <span class="seg-icon">○</span>
+                            </div>
+                            <div class="segment-pill" id="seg2">
+                                <span class="seg-name">Seg 002</span>
+                                <span class="seg-icon">○</span>
+                            </div>
+                            <div class="segment-pill" id="seg3">
+                                <span class="seg-name">Seg 003</span>
+                                <span class="seg-icon">○</span>
+                            </div>
+                            <div class="segment-pill" id="seg4">
+                                <span class="seg-name">Seg 004</span>
+                                <span class="seg-icon">○</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="activity-feedback" id="streamingFeedback" aria-live="polite"></div>
+                </div>
+            </div>
+
+
+            <!-- ACTIVITY LOG -->
+            <div class="activity-log-card">
+                <div class="log-header">
+                    <div class="log-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="4 17 10 11 4 5"></polyline>
+                            <line x1="12" y1="19" x2="20" y2="19"></line>
+                        </svg>
+                        <h3>Activity Log</h3>
+                    </div>
+                    <div class="log-actions">
+                        <button id="clearLogBtn" class="btn btn-xs btn-ghost" title="Clear all log entries">Clear</button>
+                    </div>
+                </div>
+
+                <div class="log-container" id="activityLog" aria-live="polite">
+                    <div class="empty-log-state" id="emptyLogPrompt">
+                        <span>No protocol activity recorded yet.</span>
+                        <small>Initiate Browsing, Mail, or Streaming above.</small>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- ========================================== -->
+        <!-- RIGHT PANEL: PROTOCOL VISUALIZATION PANEL  -->
+        <!-- ========================================== -->
+        <section class="protocol-panel" aria-label="Protocol Visualization Panel">
+
+            <!-- PANEL HEADER -->
+            <div class="panel-header">
+                <div>
+                    <h2>Protocol Visualization</h2>
+                    <p>Live packet transmission, topology graph, and RFC payload breakdown</p>
+                </div>
+                <div class="protocol-meta-tags">
+                    <span class="active-protocol-badge badge-idle" id="activeProtocolBadge">IDLE</span>
+                    <span class="step-badge" id="stepCounterBadge">STEP 0 / 0</span>
+                </div>
+            </div>
+
+
+            <!-- NETWORK TOPOLOGY GRAPH (SVG) -->
+            <div class="topology-wrapper">
+                <div class="topology-header">
+                    <span class="topology-title">Network Architecture Topology</span>
+                    <span class="simulation-note">Interactive Packet Layer Flow</span>
+                </div>
+
+                <div class="svg-container">
+                    <svg id="networkSvg" viewBox="0 0 720 250" preserveAspectRatio="xMidYMid meet">
+                        <defs>
+                            <!-- Arrow Markers -->
+                            <marker id="arrowHead" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                <path d="M 0 1 L 10 5 L 0 9 z" fill="#38bdf8"></path>
+                            </marker>
+                            <marker id="arrowHeadReturn" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                <path d="M 0 1 L 10 5 L 0 9 z" fill="#34d399"></path>
+                            </marker>
+
+                            <!-- Glow Filters -->
+                            <filter id="glowCyan" x="-20%" y="-20%" width="140%" height="140%">
+                                <feGaussianBlur stdDeviation="3" result="blur"></feGaussianBlur>
+                                <feComposite in="SourceGraphic" in2="blur" operator="over"></feComposite>
+                            </filter>
+                            <filter id="glowPacket" x="-50%" y="-50%" width="200%" height="200%">
+                                <feGaussianBlur stdDeviation="4" result="blur"></feGaussianBlur>
+                                <feComposite in="SourceGraphic" in2="blur" operator="over"></feComposite>
+                            </filter>
+                        </defs>
+
+                        <!-- Background Connection Links -->
+                        <g class="network-links">
+                            <!-- Client <-> DNS Server -->
+                            <path id="linkDns" class="topo-link" d="M 140 125 C 300 125, 340 55, 540 55"></path>
+                            <!-- Client <-> Web Server -->
+                            <path id="linkWeb" class="topo-link" d="M 140 125 C 300 125, 340 125, 540 125"></path>
+                            <!-- Client <-> Mail Server -->
+                            <path id="linkMail" class="topo-link" d="M 140 125 C 300 125, 340 195, 540 195"></path>
+                        </g>
+
+                        <!-- Active Highlight Link (animated stroke) -->
+                        <path id="activeLinkPath" class="active-link" d="M 0 0 L 0 0"></path>
+
+                        <!-- Moving Packet Element -->
+                        <g id="packetGroup" class="packet-group" style="display: none;">
+                            <circle id="packetHalo" r="14" class="packet-halo" filter="url(#glowPacket)"></circle>
+                            <circle id="packetDot" r="7" class="packet-dot"></circle>
+                            <text id="packetText" class="packet-label" y="-12" text-anchor="middle">PACKET</text>
+                        </g>
+
+                        <!-- NODES -->
+                        <!-- 1. CLIENT NODE -->
+                        <g id="nodeClient" class="network-node node-client" transform="translate(100, 125)">
+                            <circle class="node-glow" r="38"></circle>
+                            <circle class="node-base" r="28"></circle>
+                            <text class="node-icon" text-anchor="middle" dy="6">💻</text>
+                            <text class="node-name" text-anchor="middle" dy="46">CLIENT HOST</text>
+                            <text class="node-ip" text-anchor="middle" dy="59">192.168.1.105</text>
+                        </g>
+
+                        <!-- 2. DNS SERVER NODE -->
+                        <g id="nodeDns" class="network-node node-dns" transform="translate(580, 55)">
+                            <circle class="node-glow" r="36"></circle>
+                            <circle class="node-base" r="26"></circle>
+                            <text class="node-icon" text-anchor="middle" dy="6">🌐</text>
+                            <text class="node-name" text-anchor="middle" dy="44">DNS SERVER</text>
+                            <text class="node-ip" text-anchor="middle" dy="57">8.8.8.8 : 53 (UDP)</text>
+                        </g>
+
+                        <!-- 3. WEB SERVER NODE -->
+                        <g id="nodeWeb" class="network-node node-web" transform="translate(580, 125)">
+                            <circle class="node-glow" r="36"></circle>
+                            <circle class="node-base" r="26"></circle>
+                            <text class="node-icon" text-anchor="middle" dy="6">☁</text>
+                            <text class="node-name" text-anchor="middle" dy="44">WEB SERVER</text>
+                            <text class="node-ip" text-anchor="middle" dy="57">93.184.216.34 : 80</text>
+                        </g>
+
+                        <!-- 4. MAIL SERVER NODE -->
+                        <g id="nodeMail" class="network-node node-mail" transform="translate(580, 195)">
+                            <circle class="node-glow" r="36"></circle>
+                            <circle class="node-base" r="26"></circle>
+                            <text class="node-icon" text-anchor="middle" dy="6">📮</text>
+                            <text class="node-name" text-anchor="middle" dy="44">MAIL SERVER</text>
+                            <text class="node-ip" text-anchor="middle" dy="57">198.51.100.25 : 25</text>
+                        </g>
+                    </svg>
+                </div>
+            </div>
+
+
+            <!-- INTERACTIVE STEP TIMELINE -->
+            <div class="timeline-wrapper">
+                <div class="timeline-header">
+                    <span class="timeline-title">Interactive Protocol Progression Timeline</span>
+                    <span class="timeline-hint">Click any step to jump</span>
+                </div>
+                <div class="timeline-track" id="timelineTrack">
+                    <div class="timeline-empty">Start an activity to populate the timeline.</div>
+                </div>
+            </div>
+
+
+            <!-- PROTOCOL MESSAGE DISPLAY CARD -->
+            <div class="protocol-display" id="protocolDisplay">
+
+                <!-- WAITING SCREEN (DEFAULT STATE) -->
+                <div class="waiting-screen" id="waitingScreen">
+                    <div class="waiting-icon-pulse">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                        </svg>
+                    </div>
+                    <h3>Waiting for Application Activity</h3>
+                    <p>
+                        Choose <strong>Web Browsing</strong>, <strong>Email Client</strong>, or <strong>Media Streaming</strong>
+                        from the left panel to watch realistic packet handshakes, protocol headers, and network flows.
+                    </p>
+                    <div class="simulation-notice">
+                        <span class="info-icon">ℹ</span>
+                        <span>This platform provides an educational simulation of RFC-compliant application layer protocols.</span>
+                    </div>
+                </div>
+
+                <!-- DYNAMIC MESSAGE CARD CONTAINER -->
+                <div class="active-message-card" id="activeMessageCard" style="display: none;">
+                    <div class="message-card-top">
+                        <div class="message-badge-group">
+                            <span class="protocol-tag" id="msgProtocolTag">DNS</span>
+                            <span class="direction-tag" id="msgDirectionTag">Client ➔ DNS Server</span>
+                            <span class="simulated-flag">SIMULATED RFC EVENT</span>
+                        </div>
+                        <span class="step-indicator" id="msgStepIndicator">Step 1 of 4</span>
+                    </div>
+
+                    <h3 class="message-title" id="msgTitle">DNS Standard Query (A Record)</h3>
+
+                    <!-- PROTOCOL PAYLOAD PREFORMATTED BOX -->
+                    <div class="code-block-wrapper">
+                        <div class="code-block-header">
+                            <span>SIMULATED APPLICATION LAYER PDU</span>
+                            <button class="copy-btn" id="copyPayloadBtn" title="Copy protocol payload">Copy Payload</button>
+                        </div>
+                        <pre class="protocol-code" id="msgPayload">Loading payload...</pre>
+                    </div>
+
+                    <!-- EDUCATIONAL EXPLANATION BOX -->
+                    <div class="explanation-box">
+                        <div class="explanation-header">
+                            <span class="explanation-icon">💡</span>
+                            <h4>Application Layer Protocol Analysis</h4>
+                        </div>
+                        <p class="explanation-text" id="msgExplanation">Loading explanation...</p>
+                    </div>
+                </div>
+
+            </div>
+
+
+            <!-- VISUALIZATION CONTROLS BAR -->
+            <div class="visualization-controls">
+                <button id="previousBtn" class="btn btn-ctrl" disabled title="Go to previous protocol step">
+                    <span>◀</span> Previous
+                </button>
+
+                <button id="pauseVisualizationBtn" class="btn btn-ctrl btn-playpause" disabled title="Pause or resume auto playback">
+                    <span id="pauseBtnIcon">⏸</span> <span id="pauseBtnText">Pause</span>
+                </button>
+
+                <button id="nextBtn" class="btn btn-ctrl" disabled title="Advance to next protocol step">
+                    Next <span>▶</span>
+                </button>
+
+                <button id="replayBtn" class="btn btn-ctrl" disabled title="Restart current activity from step 1">
+                    <span>↻</span> Replay
+                </button>
+
+                <div class="speed-toggle-wrapper">
+                    <label for="speedSelect" class="sr-only">Speed</label>
+                    <select id="speedSelect" class="speed-select" title="Animation and step progression speed">
+                        <option value="2500">Speed: 0.75x (Slow)</option>
+                        <option value="1800" selected>Speed: 1x (Normal)</option>
+                        <option value="1000">Speed: 1.8x (Fast)</option>
+                    </select>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="app-footer">
+        <p>Computer Networks Semester Project • Application Layer Protocol Visualizer • Fully Offline Compatible</p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+
+</html>
