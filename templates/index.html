@@ -1,623 +1,1937 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Application + Transport Layer Protocol Visualizer</title>
-    <meta name="description" content="Interactive Computer Networks protocol visualizer simulating DNS, HTTP, SMTP, streaming, TCP and UDP transport behavior.">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <title>ProtocolViz — Application + Transport Layer</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Inter, Arial, sans-serif;
+            background: #080b12;
+            color: #e9eef7;
+            min-height: 100vh;
+        }
+
+        button {
+            font-family: inherit;
+        }
+
+        .app {
+            display: grid;
+            grid-template-columns: 270px 1fr;
+            min-height: 100vh;
+        }
+
+        /* ================= SIDEBAR ================= */
+
+        .sidebar {
+            background: #10141d;
+            border-right: 1px solid #252b38;
+            padding: 24px 18px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .brand-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(135deg, #6c63ff, #3b82f6);
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .brand-text h1 {
+            margin: 0;
+            font-size: 19px;
+        }
+
+        .brand-text span {
+            font-size: 11px;
+            color: #8490a5;
+        }
+
+        .section-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #667085;
+            margin: 18px 8px 10px;
+        }
+
+        .activity-btn {
+            width: 100%;
+            border: 1px solid transparent;
+            background: transparent;
+            color: #aeb8c9;
+            padding: 13px 12px;
+            margin-bottom: 7px;
+            border-radius: 10px;
+            text-align: left;
+            cursor: pointer;
+            transition: .2s;
+            display: flex;
+            align-items: center;
+            gap: 11px;
+        }
+
+        .activity-btn:hover {
+            background: #191f2b;
+            color: white;
+        }
+
+        .activity-btn.active {
+            background: #20273a;
+            border-color: #3a4561;
+            color: white;
+        }
+
+        .activity-icon {
+            width: 31px;
+            height: 31px;
+            border-radius: 8px;
+            display: grid;
+            place-items: center;
+            background: #171d28;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding-top: 20px;
+            border-top: 1px solid #252b38;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #94a0b5;
+            font-size: 12px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #35d07f;
+            box-shadow: 0 0 10px #35d07f;
+        }
+
+        /* ================= MAIN ================= */
+
+        .main {
+            padding: 25px;
+            overflow-x: hidden;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .topbar h2 {
+            margin: 0 0 7px;
+            font-size: 27px;
+        }
+
+        .topbar p {
+            margin: 0;
+            color: #8792a6;
+            font-size: 13px;
+        }
+
+        .badge {
+            padding: 7px 12px;
+            border: 1px solid #30384a;
+            background: #111722;
+            border-radius: 20px;
+            color: #8ea0bd;
+            font-size: 11px;
+        }
+
+        /* ================= CARDS ================= */
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1.25fr .75fr;
+            gap: 18px;
+        }
+
+        .card {
+            background: #10151f;
+            border: 1px solid #252c3a;
+            border-radius: 14px;
+            padding: 18px;
+            box-shadow: 0 10px 35px rgba(0,0,0,.15);
+        }
+
+        .card.full {
+            grid-column: 1 / -1;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .card-header h3 {
+            margin: 0;
+            font-size: 15px;
+        }
+
+        .card-header span {
+            color: #718099;
+            font-size: 11px;
+        }
+
+        /* ================= PROTOCOL LAYERS ================= */
+
+        .layer-row {
+            display: grid;
+            grid-template-columns: 115px 1fr;
+            gap: 15px;
+            padding: 13px 0;
+            border-bottom: 1px solid #202633;
+        }
+
+        .layer-row:last-child {
+            border-bottom: 0;
+        }
+
+        .layer-name {
+            font-size: 11px;
+            color: #8390a6;
+            text-transform: uppercase;
+            letter-spacing: .8px;
+        }
+
+        .layer-value {
+            color: #edf2fa;
+            font-size: 13px;
+        }
+
+        .protocol-tag {
+            display: inline-block;
+            padding: 5px 8px;
+            border-radius: 6px;
+            background: #1b2433;
+            color: #9bb8ff;
+            margin-right: 5px;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .tcp {
+            color: #69a5ff;
+        }
+
+        .udp {
+            color: #64d7a0;
+        }
+
+        /* ================= TIMELINE ================= */
+
+        .timeline {
+            position: relative;
+            margin-top: 8px;
+        }
+
+        .timeline::before {
+            content: "";
+            position: absolute;
+            left: 16px;
+            top: 10px;
+            bottom: 10px;
+            width: 2px;
+            background: #293142;
+        }
+
+        .timeline-item {
+            position: relative;
+            display: grid;
+            grid-template-columns: 34px 1fr;
+            gap: 13px;
+            margin-bottom: 13px;
+            cursor: pointer;
+        }
+
+        .timeline-dot {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: #171e2a;
+            border: 1px solid #354057;
+            display: grid;
+            place-items: center;
+            z-index: 2;
+            font-size: 11px;
+        }
+
+        .timeline-item.active .timeline-dot {
+            background: #344b87;
+            border-color: #6f91e9;
+            box-shadow: 0 0 16px rgba(92,126,220,.3);
+        }
+
+        .timeline-content {
+            background: #151b26;
+            border: 1px solid #242d3c;
+            border-radius: 10px;
+            padding: 11px 13px;
+        }
+
+        .timeline-item.active .timeline-content {
+            border-color: #3c527c;
+        }
+
+        .timeline-title {
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .timeline-desc {
+            color: #818da2;
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        .timeline-meta {
+            margin-top: 7px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .meta {
+            font-size: 9px;
+            padding: 4px 6px;
+            border-radius: 5px;
+            background: #202837;
+            color: #9ba8bd;
+        }
+
+        /* ================= TRANSPORT INSPECTOR ================= */
+
+        .inspector {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 9px;
+        }
+
+        .field {
+            background: #151b26;
+            border: 1px solid #252d3c;
+            border-radius: 9px;
+            padding: 10px;
+        }
+
+        .field-label {
+            font-size: 9px;
+            text-transform: uppercase;
+            color: #69758b;
+            letter-spacing: .6px;
+            margin-bottom: 5px;
+        }
+
+        .field-value {
+            font-size: 12px;
+            color: #edf2fa;
+            word-break: break-word;
+        }
+
+        /* ================= SIGNALS ================= */
+
+        .signal-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .signal {
+            background: #151b26;
+            border: 1px solid #252d3c;
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .signal-title {
+            font-size: 10px;
+            color: #79869d;
+            margin-bottom: 8px;
+        }
+
+        .signal-value {
+            font-size: 19px;
+            font-weight: 700;
+        }
+
+        .signal-desc {
+            font-size: 9px;
+            color: #69758b;
+            margin-top: 4px;
+        }
+
+        /* ================= CONTROLS ================= */
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 9px;
+        }
+
+        .btn {
+            border: 1px solid #303a4e;
+            background: #171e2a;
+            color: #c7d1e0;
+            border-radius: 8px;
+            padding: 9px 12px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: .2s;
+        }
+
+        .btn:hover {
+            background: #222c3d;
+            border-color: #536480;
+        }
+
+        .btn.primary {
+            background: #334b86;
+            border-color: #5a74b3;
+            color: white;
+        }
+
+        .btn.danger {
+            background: #48262c;
+            border-color: #81434d;
+            color: #ffb6bf;
+        }
+
+        /* ================= LOSS ================= */
+
+        .loss-box {
+            margin-top: 13px;
+            padding: 12px;
+            border-radius: 9px;
+            border: 1px dashed #4d596d;
+            background: #131923;
+            color: #8793a7;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .loss-box strong {
+            color: #ffbd6d;
+        }
+
+        /* ================= PROGRESSION ================= */
+
+        .progress {
+            height: 5px;
+            background: #242b38;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 13px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg,#617ee8,#4fd3a1);
+            transition: width .4s;
+        }
+
+        .counter {
+            display: flex;
+            justify-content: space-between;
+            color: #68758b;
+            font-size: 10px;
+            margin-top: 7px;
+        }
+
+        /* ================= RESPONSIVE ================= */
+
+        @media(max-width:1000px) {
+            .app {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                border-right: 0;
+                border-bottom: 1px solid #252b38;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card.full {
+                grid-column: auto;
+            }
+        }
+
+        @media(max-width:600px) {
+            .main {
+                padding: 15px;
+            }
+
+            .signal-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .inspector {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
-    <!-- TOP HEADER -->
-    <header class="top-bar">
+<div class="app">
+
+    <!-- ================= SIDEBAR ================= -->
+
+    <aside class="sidebar">
+
         <div class="brand">
-            <div class="brand-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="2" y1="12" x2="22" y2="12"></line>
-                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                </svg>
+            <div class="brand-icon">PV</div>
+
+            <div class="brand-text">
+                <h1>ProtocolViz</h1>
+                <span>Application + Transport</span>
             </div>
+        </div>
+
+        <div class="section-title">Activities</div>
+
+        <button class="activity-btn active" onclick="selectActivity('web', this)">
+            <div class="activity-icon">🌐</div>
             <div>
-                <h1>Application Layer Protocol Visualizer</h1>
-                <p class="subtitle">Computer Networks • Application + Transport Layer Protocol Simulation</p>
+                <b>Web Browsing</b><br>
+                <small>DNS + HTTP + TCP</small>
+            </div>
+        </button>
+
+        <button class="activity-btn" onclick="selectActivity('mail', this)">
+            <div class="activity-icon">✉</div>
+            <div>
+                <b>Email</b><br>
+                <small>SMTP + DNS + TCP</small>
+            </div>
+        </button>
+
+        <button class="activity-btn" onclick="selectActivity('media', this)">
+            <div class="activity-icon">▶</div>
+            <div>
+                <b>Media Streaming</b><br>
+                <small>HTTP + TCP/UDP</small>
+            </div>
+        </button>
+
+        <div class="section-title">Simulation</div>
+
+        <button class="activity-btn" onclick="simulateLoss()">
+            <div class="activity-icon">⚠</div>
+            <div>
+                <b>Packet Loss</b><br>
+                <small>TCP retransmission</small>
+            </div>
+        </button>
+
+        <div class="sidebar-footer">
+            <div class="status">
+                <span class="status-dot"></span>
+                Simulation Mode
             </div>
         </div>
 
-        <div class="header-badges">
-            <div class="simulation-tag" title="Educational protocol packet simulation without real raw socket capture">
-                <span class="pulse-dot sim"></span>
-                <span>SIMULATION MODE</span>
+    </aside>
+
+
+    <!-- ================= MAIN ================= -->
+
+    <main class="main">
+
+        <div class="topbar">
+
+            <div>
+                <h2 id="activityTitle">Web Browsing</h2>
+
+                <p id="activityDescription">
+                    DNS resolution followed by TCP connection establishment and HTTP data transfer.
+                </p>
             </div>
-            <div class="status-tag" id="systemStatusTag">
-                <span class="pulse-dot live" id="statusDot"></span>
-                <span id="systemStatusText">System Idle</span>
+
+            <div class="badge">
+                APPLICATION + TRANSPORT LAYER
             </div>
+
         </div>
-    </header>
 
 
-    <!-- MAIN TWO-PANEL DASHBOARD -->
-    <main class="dashboard">
+        <div class="grid">
 
-        <!-- ========================================== -->
-        <!-- LEFT PANEL: ACTIVITY PANEL                 -->
-        <!-- ========================================== -->
-        <section class="activity-panel" aria-label="Activity Selection Panel">
+            <!-- ================= PROGRESSION ================= -->
 
-            <div class="panel-header">
-                <div>
-                    <h2>Application Activities</h2>
-                    <p>Select an application layer service to simulate</p>
-                </div>
-                <span class="panel-badge">INPUT CONTROLS</span>
-            </div>
+            <section class="card">
 
-            <!-- BROWSING ACTIVITY CARD -->
-            <div class="activity-card" id="browsingCard">
-                <div class="activity-header">
-                    <div class="activity-title">
-                        <span class="activity-icon icon-browsing">🌐</span>
-                        <div>
-                            <h3>Web Browsing</h3>
-                            <p class="protocol-chips">
-                                <span class="chip dns">DNS</span>
-                                <span class="chip-plus">+</span>
-                                <span class="chip http">HTTP/1.1</span>
-                            </p>
-                        </div>
-                    </div>
-                    <span class="activity-badge" id="browsingStatusBadge">Ready</span>
+                <div class="card-header">
+                    <h3>Interactive Protocol Progression</h3>
+                    <span id="stepLabel">Step 1</span>
                 </div>
 
-                <div class="card-body">
-                    <div class="form-group">
-                        <label for="url">Target Domain or URL</label>
-                        <div class="input-with-prefix">
-                            <span class="input-prefix">http://</span>
-                            <input
-                                type="text"
-                                id="url"
-                                placeholder="example.com"
-                                value="example.com"
-                                autocomplete="off"
-                                spellcheck="false"
-                            >
-                        </div>
-                    </div>
+                <div class="timeline" id="timeline"></div>
 
-                    <div class="activity-actions">
-                        <button id="visitBtn" class="btn btn-primary">
-                            <span class="btn-icon">⚡</span> Visit Website
-                        </button>
-                    </div>
-
-                    <div class="activity-feedback" id="browsingFeedback" aria-live="polite"></div>
-                </div>
-            </div>
-
-
-            <!-- MAIL ACTIVITY CARD -->
-            <div class="activity-card" id="mailCard">
-                <div class="activity-header">
-                    <div class="activity-title">
-                        <span class="activity-icon icon-mail">📧</span>
-                        <div>
-                            <h3>Email Client</h3>
-                            <p class="protocol-chips">
-                                <span class="chip dns">DNS (MX)</span>
-                                <span class="chip-plus">+</span>
-                                <span class="chip smtp">SMTP</span>
-                            </p>
-                        </div>
-                    </div>
-                    <span class="activity-badge" id="mailStatusBadge">Ready</span>
+                <div class="progress">
+                    <div class="progress-bar" id="progressBar"></div>
                 </div>
 
-                <div class="card-body">
-                    <div class="form-group">
-                        <label for="mailTo">Recipient (To)</label>
-                        <input
-                            type="email"
-                            id="mailTo"
-                            placeholder="receiver@example.com"
-                            value="receiver@example.com"
-                            autocomplete="off"
-                        >
-                    </div>
-
-                    <div class="form-group">
-                        <label for="mailSubject">Subject</label>
-                        <input
-                            type="text"
-                            id="mailSubject"
-                            placeholder="Network Project Submission"
-                            value="Project Status Report"
-                            autocomplete="off"
-                        >
-                    </div>
-
-                    <div class="form-group">
-                        <label for="mailBody">Message Body</label>
-                        <textarea
-                            id="mailBody"
-                            rows="2"
-                            placeholder="Enter email content..."
-                        >Hello from the Application Layer Protocol Visualizer!</textarea>
-                    </div>
-
-                    <div class="activity-actions">
-                        <button id="sendMailBtn" class="btn btn-primary">
-                            <span class="btn-icon">✉</span> Send Mail (SMTP)
-                        </button>
-                    </div>
-
-                    <div class="activity-feedback" id="mailFeedback" aria-live="polite"></div>
-                </div>
-            </div>
-
-
-            <!-- STREAMING ACTIVITY CARD -->
-            <div class="activity-card" id="streamingCard">
-                <div class="activity-header">
-                    <div class="activity-title">
-                        <span class="activity-icon icon-stream">🎬</span>
-                        <div>
-                            <h3>Media Streaming</h3>
-                            <p class="protocol-chips">
-                                <span class="chip dns">DNS</span>
-                                <span class="chip-plus">+</span>
-                                <span class="chip http">HTTP HLS Chunking</span>
-                            </p>
-                        </div>
-                    </div>
-                    <span class="activity-badge" id="streamingStatusBadge">Ready</span>
+                <div class="counter">
+                    <span id="progressText">1 / 1</span>
+                    <span>Application + Transport</span>
                 </div>
 
-                <div class="card-body">
-                    <div class="form-group">
-                        <label for="quality">Stream Quality / Bitrate</label>
-                        <select id="quality">
-                            <option value="360p">360p (Standard Definition • 800 kbps)</option>
-                            <option value="480p">480p (Enhanced Definition • 1400 kbps)</option>
-                            <option value="720p">720p (High Definition • 2800 kbps)</option>
-                            <option value="1080p" selected>1080p (Full HD • 5000 kbps)</option>
-                        </select>
-                    </div>
+                <div style="height:15px"></div>
 
-                    <div class="stream-controls">
-                        <button id="playBtn" class="btn btn-primary">
-                            <span class="btn-icon">▶</span> Play Stream
-                        </button>
-                        <button id="pauseBtn" class="btn btn-secondary" disabled>
-                            <span class="btn-icon">⏸</span> Pause
-                        </button>
-                    </div>
+                <div class="controls">
 
-                    <!-- SIMULATED VIDEO PLAYER WIDGET -->
-                    <div class="video-player-sim" id="videoPlayerWidget">
-                        <div class="player-screen">
-                            <div class="player-overlay-top">
-                                <span class="video-title">video_stream_hls.m3u8</span>
-                                <span class="quality-tag" id="playerQualityTag">1080p</span>
-                            </div>
-                            <div class="player-center-status" id="playerPlaybackState">
-                                <span class="state-icon">⏹</span>
-                                <span class="state-text">STANDBY</span>
-                            </div>
-                            <div class="player-overlay-bottom">
-                                <span id="playerTimeDisplay">00:00 / 00:24</span>
-                                <span id="playerResolutionDisplay">1920x1080 @ 60fps</span>
-                            </div>
-                        </div>
+                    <button class="btn" onclick="previousStep()">
+                        ← Previous
+                    </button>
 
-                        <!-- BUFFER PROGRESS -->
-                        <div class="buffer-section">
-                            <div class="buffer-meta">
-                                <span>Playback Buffer Status</span>
-                                <span id="bufferPercentText">0%</span>
-                            </div>
-                            <div class="buffer-track">
-                                <div class="buffer-bar" id="bufferFillBar" style="width: 0%;"></div>
-                            </div>
-                        </div>
+                    <button class="btn primary" onclick="nextStep()">
+                        Next →
+                    </button>
 
-                        <!-- SEGMENTS STATUS -->
-                        <div class="segments-grid">
-                            <div class="segment-pill" id="seg1">
-                                <span class="seg-name">Seg 001</span>
-                                <span class="seg-icon">○</span>
-                            </div>
-                            <div class="segment-pill" id="seg2">
-                                <span class="seg-name">Seg 002</span>
-                                <span class="seg-icon">○</span>
-                            </div>
-                            <div class="segment-pill" id="seg3">
-                                <span class="seg-name">Seg 003</span>
-                                <span class="seg-icon">○</span>
-                            </div>
-                            <div class="segment-pill" id="seg4">
-                                <span class="seg-name">Seg 004</span>
-                                <span class="seg-icon">○</span>
-                            </div>
-                        </div>
-                    </div>
+                    <button class="btn" onclick="autoPlay()">
+                        ▶ Auto Play
+                    </button>
 
-                    <div class="activity-feedback" id="streamingFeedback" aria-live="polite"></div>
-                </div>
-            </div>
-
-
-            <!-- ACTIVITY LOG -->
-            <div class="activity-log-card">
-                <div class="log-header">
-                    <div class="log-title">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="4 17 10 11 4 5"></polyline>
-                            <line x1="12" y1="19" x2="20" y2="19"></line>
-                        </svg>
-                        <h3>Activity Log</h3>
-                    </div>
-                    <div class="log-actions">
-                        <button id="clearLogBtn" class="btn btn-xs btn-ghost" title="Clear all log entries">Clear</button>
-                    </div>
                 </div>
 
-                <div class="log-container" id="activityLog" aria-live="polite">
-                    <div class="empty-log-state" id="emptyLogPrompt">
-                        <span>No protocol activity recorded yet.</span>
-                        <small>Initiate Browsing, Mail, or Streaming above.</small>
-                    </div>
-                </div>
-            </div>
-
-        </section>
-
-
-        <!-- ========================================== -->
-        <!-- RIGHT PANEL: PROTOCOL VISUALIZATION PANEL  -->
-        <!-- ========================================== -->
-        <section class="protocol-panel" aria-label="Protocol Visualization Panel">
-
-            <!-- PANEL HEADER -->
-            <div class="panel-header">
-                <div>
-                    <h2>Protocol Visualization</h2>
-                    <p>Live packet transmission, topology graph, and RFC payload breakdown</p>
-                </div>
-                <div class="protocol-meta-tags">
-                    <span class="active-protocol-badge badge-idle" id="activeProtocolBadge">IDLE</span>
-                    <span class="step-badge" id="stepCounterBadge">STEP 0 / 0</span>
-                </div>
-            </div>
-
-
-            <!-- NETWORK TOPOLOGY GRAPH (SVG) -->
-            <div class="topology-wrapper">
-                <div class="topology-header">
-                    <span class="topology-title">Network Architecture Topology</span>
-                    <span class="simulation-note">Interactive Packet Layer Flow</span>
-                </div>
-
-                <div class="svg-container">
-                    <svg id="networkSvg" viewBox="0 0 720 250" preserveAspectRatio="xMidYMid meet">
-                        <defs>
-                            <!-- Arrow Markers -->
-                            <marker id="arrowHead" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                                <path d="M 0 1 L 10 5 L 0 9 z" fill="#38bdf8"></path>
-                            </marker>
-                            <marker id="arrowHeadReturn" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                                <path d="M 0 1 L 10 5 L 0 9 z" fill="#34d399"></path>
-                            </marker>
-
-                            <!-- Glow Filters -->
-                            <filter id="glowCyan" x="-20%" y="-20%" width="140%" height="140%">
-                                <feGaussianBlur stdDeviation="3" result="blur"></feGaussianBlur>
-                                <feComposite in="SourceGraphic" in2="blur" operator="over"></feComposite>
-                            </filter>
-                            <filter id="glowPacket" x="-50%" y="-50%" width="200%" height="200%">
-                                <feGaussianBlur stdDeviation="4" result="blur"></feGaussianBlur>
-                                <feComposite in="SourceGraphic" in2="blur" operator="over"></feComposite>
-                            </filter>
-                        </defs>
-
-                        <!-- Background Connection Links -->
-                        <g class="network-links">
-                            <!-- Client <-> DNS Server -->
-                            <path id="linkDns" class="topo-link" d="M 140 125 C 300 125, 340 55, 540 55"></path>
-                            <!-- Client <-> Web Server -->
-                            <path id="linkWeb" class="topo-link" d="M 140 125 C 300 125, 340 125, 540 125"></path>
-                            <!-- Client <-> Mail Server -->
-                            <path id="linkMail" class="topo-link" d="M 140 125 C 300 125, 340 195, 540 195"></path>
-                        </g>
-
-                        <!-- Active Highlight Link (animated stroke) -->
-                        <path id="activeLinkPath" class="active-link" d="M 0 0 L 0 0"></path>
-
-                        <!-- Moving Packet Element -->
-                        <g id="packetGroup" class="packet-group" style="display: none;">
-                            <circle id="packetHalo" r="14" class="packet-halo" filter="url(#glowPacket)"></circle>
-                            <circle id="packetDot" r="7" class="packet-dot"></circle>
-                            <text id="packetText" class="packet-label" y="-12" text-anchor="middle">PACKET</text>
-                        </g>
-
-                        <!-- NODES -->
-                        <!-- 1. CLIENT NODE -->
-                        <g id="nodeClient" class="network-node node-client" transform="translate(100, 125)">
-                            <circle class="node-glow" r="38"></circle>
-                            <circle class="node-base" r="28"></circle>
-                            <text class="node-icon" text-anchor="middle" dy="6">💻</text>
-                            <text class="node-name" text-anchor="middle" dy="46">CLIENT HOST</text>
-                            <text class="node-ip" text-anchor="middle" dy="59">192.168.1.105</text>
-                        </g>
-
-                        <!-- 2. DNS SERVER NODE -->
-                        <g id="nodeDns" class="network-node node-dns" transform="translate(580, 55)">
-                            <circle class="node-glow" r="36"></circle>
-                            <circle class="node-base" r="26"></circle>
-                            <text class="node-icon" text-anchor="middle" dy="6">🌐</text>
-                            <text class="node-name" text-anchor="middle" dy="44">DNS SERVER</text>
-                            <text class="node-ip" text-anchor="middle" dy="57">8.8.8.8 : 53 (UDP)</text>
-                        </g>
-
-                        <!-- 3. WEB SERVER NODE -->
-                        <g id="nodeWeb" class="network-node node-web" transform="translate(580, 125)">
-                            <circle class="node-glow" r="36"></circle>
-                            <circle class="node-base" r="26"></circle>
-                            <text class="node-icon" text-anchor="middle" dy="6">☁</text>
-                            <text class="node-name" text-anchor="middle" dy="44">WEB SERVER</text>
-                            <text class="node-ip" text-anchor="middle" dy="57">93.184.216.34 : 80</text>
-                        </g>
-
-                        <!-- 4. MAIL SERVER NODE -->
-                        <g id="nodeMail" class="network-node node-mail" transform="translate(580, 195)">
-                            <circle class="node-glow" r="36"></circle>
-                            <circle class="node-base" r="26"></circle>
-                            <text class="node-icon" text-anchor="middle" dy="6">📮</text>
-                            <text class="node-name" text-anchor="middle" dy="44">MAIL SERVER</text>
-                            <text class="node-ip" text-anchor="middle" dy="57">198.51.100.25 : 25</text>
-                        </g>
-                    </svg>
-                </div>
-            </div>
-
-
-            <!-- INTERACTIVE STEP TIMELINE -->
-            <div class="timeline-wrapper">
-                <div class="timeline-header">
-                    <span class="timeline-title">Interactive Protocol Progression Timeline</span>
-                    <span class="timeline-hint">Click any step to jump</span>
-                </div>
-                <div class="timeline-track" id="timelineTrack">
-                    <div class="timeline-empty">Start an activity to populate the timeline.</div>
-                </div>
-            </div>
-
-
-<<<<<<< HEAD
-            <!-- SYNCHRONIZED APPLICATION / TRANSPORT VIEW SWITCH -->
-            <div class="layer-view-switcher" id="layerViewSwitcher" aria-label="Layer visualization view">
-                <button type="button" class="layer-view-btn active" data-layer-view="combined">Application + Transport</button>
-                <button type="button" class="layer-view-btn" data-layer-view="application">Application Layer</button>
-                <button type="button" class="layer-view-btn" data-layer-view="transport">Transport Layer</button>
-                <span class="layer-sync-note">↔ Same timeline step</span>
-            </div>
-
-=======
->>>>>>> 107789194c9e97810cbe112f64d2bd4b9a118f61
-            <!-- DEEP TRANSPORT LAYER INSPECTOR -->
-            <section class="transport-panel" id="transportPanel" aria-label="Transport Layer Inspector">
-                <div class="transport-header">
-                    <div>
-                        <div class="transport-title-row">
-                            <span class="layer-icon">↕</span>
-                            <div>
-                                <h3>Transport Layer Inspector</h3>
-                                <p>Live simulated TCP/UDP segment analysis for the current application event</p>
-                            </div>
-                        </div>
-                    </div>
-                    <span class="transport-layer-badge" id="transportLayerBadge">WAITING</span>
-                </div>
-
-                <div class="transport-empty" id="transportEmpty">
-                    <span class="transport-empty-icon">⌁</span>
-                    <div>
-                        <strong>Transport Layer is waiting</strong>
-                        <p>Start Web Browsing, Email, or Streaming to inspect ports, TCP flags, sequence numbers, ACKs, windows, checksums and connection states.</p>
-                    </div>
-                </div>
-
-                <div class="transport-content" style="display:none;">
-                    <div class="transport-summary">
-                        <div class="transport-protocol-box">
-                            <span class="metric-label">PROTOCOL</span>
-                            <strong id="transportProtocol">TCP</strong>
-                        </div>
-                        <div class="transport-state-box">
-                            <span class="metric-label">CONNECTION STATE</span>
-                            <strong id="transportState">ESTABLISHED</strong>
-                        </div>
-                        <div class="transport-direction-box">
-                            <span class="metric-label">DIRECTION</span>
-                            <strong id="transportDirection">Client → Server</strong>
-                        </div>
-                    </div>
-
-                    <div class="transport-grid">
-                        <div class="transport-field"><span>Source Port</span><strong id="transportPorts">—</strong></div>
-                        <div class="transport-field"><span>Destination Port</span><strong id="transportDestinationPort">—</strong></div>
-                        <div class="transport-field"><span>Sequence Number</span><strong id="transportSeq">—</strong></div>
-                        <div class="transport-field"><span>ACK Number</span><strong id="transportAck">—</strong></div>
-                        <div class="transport-field"><span>TCP Flags</span><strong id="transportFlags">—</strong></div>
-                        <div class="transport-field"><span>Receive Window</span><strong id="transportWindow">—</strong></div>
-                        <div class="transport-field"><span>Header Length</span><strong id="transportHeader">—</strong></div>
-                        <div class="transport-field"><span>Checksum</span><strong id="transportChecksum">—</strong></div>
-                        <div class="transport-field"><span>Payload Size</span><strong id="transportPayload">—</strong></div>
-                        <div class="transport-field"><span>Segment / Datagram</span><strong id="transportSegment">—</strong></div>
-                        <div class="transport-field"><span>MSS</span><strong id="transportMss">—</strong></div>
-                        <div class="transport-field"><span>Congestion Window</span><strong id="transportCwnd">—</strong></div>
-                    </div>
-
-<<<<<<< HEAD
-                    <div class="transport-control-row">
-                        <div class="transport-control-card flow">
-                            <span class="control-icon">↕</span>
-                            <div><b>Flow Control</b><p id="transportFlowSignal">Receive Window (rwnd): —</p><small>Prevents sender from overrunning the receiver.</small></div>
-                        </div>
-                        <div class="transport-control-card congestion">
-                            <span class="control-icon">↗</span>
-                            <div><b>Congestion Control</b><p id="transportCongestionSignal">cwnd: — · ssthresh: —</p><small>Educational signal showing sender-side congestion behavior.</small></div>
-                        </div>
-                        <div class="transport-control-card reliability">
-                            <span class="control-icon">✓</span>
-                            <div><b>Reliability / Recovery</b><p id="transportRecoverySignal">ACK / retransmission: —</p><small>Sequence numbers and ACKs track delivered bytes.</small></div>
-                        </div>
-                    </div>
-
-=======
->>>>>>> 107789194c9e97810cbe112f64d2bd4b9a118f61
-                    <div class="transport-learning-row">
-                        <div class="transport-learning-card">
-                            <span class="learning-icon">✓</span>
-                            <div><b>Reliability Model</b><p id="transportReliability">—</p></div>
-                        </div>
-                        <div class="transport-learning-card">
-                            <span class="learning-icon">i</span>
-                            <div><b>What this event demonstrates</b><p id="transportNote">—</p></div>
-                        </div>
-                    </div>
-
-                    <div class="transport-actions">
-                        <button id="simulateLossBtn" class="transport-action-btn" type="button">⚠ Simulate TCP Packet Loss</button>
-                        <span id="lossResult" class="loss-result">Use this on a TCP data step to demonstrate timeout and retransmission.</span>
-                    </div>
-
-                    <details class="tcp-header-reference">
-                        <summary>TCP Header Reference — click to inspect fields</summary>
-                        <div class="tcp-header-diagram">
-                            <div><span>Source Port</span><span>Destination Port</span></div>
-                            <div><span>Sequence Number (32 bits)</span></div>
-                            <div><span>ACK Number (32 bits)</span></div>
-                            <div><span>Data Offset</span><span>Flags: SYN ACK FIN RST PSH URG ECE CWR</span><span>Window</span></div>
-                            <div><span>Checksum</span><span>Urgent Pointer</span></div>
-                            <div><span>Options + Padding</span></div>
-                            <div class="tcp-payload-strip"><span>APPLICATION PAYLOAD</span></div>
-                        </div>
-                        <p class="reference-note">TCP header fields are shown as an educational model. Actual option fields and values vary by operating system, connection, and network.</p>
-                    </details>
-
-                    <div class="transport-flow-legend">
-                        <span><i class="legend-dot tcp"></i> TCP: connection-oriented, reliable, ordered byte stream</span>
-                        <span><i class="legend-dot udp"></i> UDP: connectionless datagrams with ports + checksum</span>
-                        <span><i class="legend-dot quic"></i> Modern note: HTTP/3 uses QUIC over UDP</span>
-                    </div>
-                </div>
             </section>
 
 
-            <!-- PROTOCOL MESSAGE DISPLAY CARD -->
-            <div class="protocol-display" id="protocolDisplay">
+            <!-- ================= TRANSPORT INSPECTOR ================= -->
 
-                <!-- WAITING SCREEN (DEFAULT STATE) -->
-                <div class="waiting-screen" id="waitingScreen">
-                    <div class="waiting-icon-pulse">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                            <line x1="12" y1="22.08" x2="12" y2="12"></line>
-                        </svg>
-                    </div>
-                    <h3>Waiting for Application Activity</h3>
-                    <p>
-                        Choose <strong>Web Browsing</strong>, <strong>Email Client</strong>, or <strong>Media Streaming</strong>
-                        from the left panel to watch realistic packet handshakes, protocol headers, and network flows.
-                    </p>
-                    <div class="simulation-notice">
-                        <span class="info-icon">ℹ</span>
-                        <span>This platform provides an educational simulation of application-layer protocols plus detailed TCP/UDP transport-layer behavior. No raw packets are captured or transmitted.</span>
-                    </div>
+            <section class="card">
+
+                <div class="card-header">
+                    <h3>Transport Inspector</h3>
+                    <span id="transportProtocol">TCP</span>
                 </div>
 
-                <!-- DYNAMIC MESSAGE CARD CONTAINER -->
-                <div class="active-message-card" id="activeMessageCard" style="display: none;">
-                    <div class="message-card-top">
-                        <div class="message-badge-group">
-                            <span class="protocol-tag" id="msgProtocolTag">DNS</span>
-                            <span class="direction-tag" id="msgDirectionTag">Client ➔ DNS Server</span>
-                            <span class="simulated-flag">SIMULATED RFC EVENT</span>
-                        </div>
-                        <span class="step-indicator" id="msgStepIndicator">Step 1 of 4</span>
+                <div class="inspector">
+
+                    <div class="field">
+                        <div class="field-label">Protocol</div>
+                        <div class="field-value" id="fProtocol">TCP</div>
                     </div>
 
-                    <h3 class="message-title" id="msgTitle">DNS Standard Query (A Record)</h3>
-
-                    <!-- PROTOCOL PAYLOAD PREFORMATTED BOX -->
-                    <div class="code-block-wrapper">
-                        <div class="code-block-header">
-                            <span>SIMULATED APPLICATION LAYER PDU</span>
-                            <button class="copy-btn" id="copyPayloadBtn" title="Copy protocol payload">Copy Payload</button>
-                        </div>
-                        <pre class="protocol-code" id="msgPayload">Loading payload...</pre>
+                    <div class="field">
+                        <div class="field-label">Segment / Datagram</div>
+                        <div class="field-value" id="fType">TCP Segment</div>
                     </div>
 
-                    <!-- EDUCATIONAL EXPLANATION BOX -->
-                    <div class="explanation-box">
-                        <div class="explanation-header">
-                            <span class="explanation-icon">💡</span>
-                            <h4>Application Layer Protocol Analysis</h4>
-                        </div>
-                        <p class="explanation-text" id="msgExplanation">Loading explanation...</p>
+                    <div class="field">
+                        <div class="field-label">Source Port</div>
+                        <div class="field-value" id="fSource">49152</div>
                     </div>
+
+                    <div class="field">
+                        <div class="field-label">Destination Port</div>
+                        <div class="field-value" id="fDestination">443</div>
+                    </div>
+
+                    <div class="field">
+                        <div class="field-label">Sequence Number</div>
+                        <div class="field-value" id="fSeq">1000</div>
+                    </div>
+
+                    <div class="field">
+                        <div class="field-label">Acknowledgement</div>
+                        <div class="field-value" id="fAck">0</div>
+                    </div>
+
+                    <div class="field">
+                        <div class="field-label">TCP Flags</div>
+                        <div class="field-value" id="fFlags">SYN</div>
+                    </div>
+
+                    <div class="field">
+                        <div class="field-label">Payload</div>
+                        <div class="field-value" id="fPayload">0 bytes</div>
+                    </div>
+
                 </div>
 
-            </div>
+            </section>
 
 
-            <!-- VISUALIZATION CONTROLS BAR -->
-            <div class="visualization-controls">
-                <button id="previousBtn" class="btn btn-ctrl" disabled title="Go to previous protocol step">
-                    <span>◀</span> Previous
-                </button>
+            <!-- ================= APPLICATION + TRANSPORT ================= -->
 
-                <button id="pauseVisualizationBtn" class="btn btn-ctrl btn-playpause" disabled title="Pause or resume auto playback">
-                    <span id="pauseBtnIcon">⏸</span> <span id="pauseBtnText">Pause</span>
-                </button>
+            <section class="card full">
 
-                <button id="nextBtn" class="btn btn-ctrl" disabled title="Advance to next protocol step">
-                    Next <span>▶</span>
-                </button>
+                <div class="card-header">
 
-                <button id="replayBtn" class="btn btn-ctrl" disabled title="Restart current activity from step 1">
-                    <span>↻</span> Replay
-                </button>
+                    <h3>Current Protocol Layer Mapping</h3>
 
-                <div class="speed-toggle-wrapper">
-                    <label for="speedSelect" class="sr-only">Speed</label>
-                    <select id="speedSelect" class="speed-select" title="Animation and step progression speed">
-                        <option value="2500">Speed: 0.75x (Slow)</option>
-                        <option value="1800" selected>Speed: 1x (Normal)</option>
-                        <option value="1000">Speed: 1.8x (Fast)</option>
-                    </select>
+                    <span>
+                        Application → Transport
+                    </span>
+
                 </div>
-            </div>
 
-        </section>
+                <div class="layer-row">
+
+                    <div class="layer-name">
+                        Application
+                    </div>
+
+                    <div class="layer-value" id="applicationLayer">
+                        DNS — Domain Name Resolution
+                    </div>
+
+                </div>
+
+                <div class="layer-row">
+
+                    <div class="layer-name">
+                        Transport
+                    </div>
+
+                    <div class="layer-value" id="transportLayer">
+                        UDP — DNS Datagram
+                    </div>
+
+                </div>
+
+                <div class="layer-row">
+
+                    <div class="layer-name">
+                        Purpose
+                    </div>
+
+                    <div class="layer-value" id="purposeLayer">
+                        Resolve the destination domain name.
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- ================= TCP CONTROL ================= -->
+
+            <section class="card full">
+
+                <div class="card-header">
+
+                    <h3>TCP Flow & Congestion Control</h3>
+
+                    <span>
+                        Educational simulation
+                    </span>
+
+                </div>
+
+                <div class="signal-grid">
+
+                    <div class="signal">
+
+                        <div class="signal-title">
+                            RECEIVE WINDOW
+                        </div>
+
+                        <div class="signal-value" id="rwnd">
+                            64 KB
+                        </div>
+
+                        <div class="signal-desc">
+                            Receiver-advertised capacity
+                        </div>
+
+                    </div>
+
+                    <div class="signal">
+
+                        <div class="signal-title">
+                            CONGESTION WINDOW
+                        </div>
+
+                        <div class="signal-value" id="cwnd">
+                            14.6 KB
+                        </div>
+
+                        <div class="signal-desc">
+                            Sender congestion limit
+                        </div>
+
+                    </div>
+
+                    <div class="signal">
+
+                        <div class="signal-title">
+                            SLOW START THRESHOLD
+                        </div>
+
+                        <div class="signal-value" id="ssthresh">
+                            32 KB
+                        </div>
+
+                        <div class="signal-desc">
+                            Congestion-control threshold
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="loss-box" id="lossMessage">
+
+                    <strong>TCP Reliability:</strong>
+                    TCP uses acknowledgements, sequence numbers and retransmission
+                    to provide reliable byte-stream delivery.
+
+                </div>
+
+            </section>
+
+
+            <!-- ================= PACKET LOSS ================= -->
+
+            <section class="card full">
+
+                <div class="card-header">
+
+                    <h3>TCP Packet-Loss Simulation</h3>
+
+                    <span>
+                        Educational simulation
+                    </span>
+
+                </div>
+
+                <div class="controls">
+
+                    <button class="btn danger" onclick="simulateLoss()">
+                        ⚠ Simulate TCP Packet Loss
+                    </button>
+
+                    <button class="btn" onclick="resetLoss()">
+                        Reset
+                    </button>
+
+                </div>
+
+                <div class="loss-box" id="packetLossStatus">
+
+                    Ready.
+                    Press <b>Simulate TCP Packet Loss</b> to demonstrate
+                    loss → detection → retransmission → recovery.
+
+                </div>
+
+            </section>
+
+
+            <!-- ================= TCP LIFECYCLE ================= -->
+
+            <section class="card full">
+
+                <div class="card-header">
+
+                    <h3>TCP Connection Lifecycle</h3>
+
+                    <span>
+                        Connection establishment → transfer → teardown
+                    </span>
+
+                </div>
+
+                <div class="signal-grid">
+
+                    <div class="signal">
+
+                        <div class="signal-title">
+                            01 — ESTABLISHMENT
+                        </div>
+
+                        <div class="signal-value">
+                            SYN
+                        </div>
+
+                        <div class="signal-desc">
+                            Client requests connection.
+                        </div>
+
+                    </div>
+
+                    <div class="signal">
+
+                        <div class="signal-title">
+                            02 — DATA TRANSFER
+                        </div>
+
+                        <div class="signal-value">
+                            ACK
+                        </div>
+
+                        <div class="signal-desc">
+                            Data is acknowledged and tracked.
+                        </div>
+
+                    </div>
+
+                    <div class="signal">
+
+                        <div class="signal-title">
+                            03 — TEARDOWN
+                        </div>
+
+                        <div class="signal-value">
+                            FIN
+                        </div>
+
+                        <div class="signal-desc">
+                            Connection is gracefully closed.
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </div>
 
     </main>
 
-    <!-- FOOTER -->
-    <footer class="app-footer">
-        <p>Computer Networks Semester Project • Application Layer Protocol Visualizer • Fully Offline Compatible</p>
-    </footer>
+</div>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+<script>
+
+    /* =========================================================
+       ACTIVITY DATA
+       ========================================================= */
+
+    const activities = {
+
+        web: {
+
+            title: "Web Browsing",
+
+            description:
+                "DNS resolution followed by TCP connection establishment and HTTP data transfer.",
+
+            steps: [
+
+                {
+                    title: "DNS Query",
+
+                    desc:
+                        "The browser asks a DNS resolver to resolve the requested domain name.",
+
+                    app:
+                        "DNS — Domain Name Resolution",
+
+                    transport:
+                        "UDP — DNS Datagram",
+
+                    purpose:
+                        "Resolve the destination domain name.",
+
+                    protocol:
+                        "UDP",
+
+                    type:
+                        "UDP Datagram",
+
+                    source:
+                        "49152",
+
+                    destination:
+                        "53",
+
+                    seq:
+                        "—",
+
+                    ack:
+                        "—",
+
+                    flags:
+                        "—",
+
+                    payload:
+                        "Query data"
+                },
+
+                {
+                    title: "DNS Response",
+
+                    desc:
+                        "The DNS resolver returns the IP address associated with the domain.",
+
+                    app:
+                        "DNS — DNS Response",
+
+                    transport:
+                        "UDP — DNS Datagram",
+
+                    purpose:
+                        "Return the resolved IP address.",
+
+                    protocol:
+                        "UDP",
+
+                    type:
+                        "UDP Datagram",
+
+                    source:
+                        "53",
+
+                    destination:
+                        "49152",
+
+                    seq:
+                        "—",
+
+                    ack:
+                        "—",
+
+                    flags:
+                        "—",
+
+                    payload:
+                        "DNS answer"
+                },
+
+                {
+                    title: "TCP SYN",
+
+                    desc:
+                        "The browser starts a reliable TCP connection with the web server.",
+
+                    app:
+                        "HTTP — Preparing connection",
+
+                    transport:
+                        "TCP — SYN Segment",
+
+                    purpose:
+                        "Request TCP connection establishment.",
+
+                    protocol:
+                        "TCP",
+
+                    type:
+                        "TCP Segment",
+
+                    source:
+                        "49152",
+
+                    destination:
+                        "443",
+
+                    seq:
+                        "1000",
+
+                    ack:
+                        "0",
+
+                    flags:
+                        "SYN",
+
+                    payload:
+                        "0 bytes"
+                },
+
+                {
+                    title: "TCP SYN-ACK",
+
+                    desc:
+                        "The server acknowledges the SYN and synchronizes its sequence number.",
+
+                    app:
+                        "HTTP — Connection establishment",
+
+                    transport:
+                        "TCP — SYN-ACK Segment",
+
+                    purpose:
+                        "Acknowledge the connection request.",
+
+                    protocol:
+                        "TCP",
+
+                    type:
+                        "TCP Segment",
+
+                    source:
+                        "443",
+
+                    destination:
+                        "49152",
+
+                    seq:
+                        "5000",
+
+                    ack:
+                        "1001",
+
+                    flags:
+                        "SYN, ACK",
+
+                    payload:
+                        "0 bytes"
+                },
+
+                {
+                    title: "TCP ACK",
+
+                    desc:
+                        "The client acknowledges the server response and the TCP connection becomes established.",
+
+                    app:
+                        "HTTP — TCP connection established",
+
+                    transport:
+                        "TCP — ACK Segment",
+
+                    purpose:
+                        "Complete the three-way handshake.",
+
+                    protocol:
+                        "TCP",
+
+                    type:
+                        "TCP Segment",
+
+                    source:
+                        "49152",
+
+                    destination:
+                        "443",
+
+                    seq:
+                        "1001",
+
+                    ack:
+                        "5001",
+
+                    flags:
+                        "ACK",
+
+                    payload:
+                        "0 bytes"
+                },
+
+                {
+                    title: "HTTP Request",
+
+                    desc:
+                        "The browser sends an HTTP request through the established TCP connection.",
+
+                    app:
+                        "HTTP — GET /",
+
+                    transport:
+                        "TCP — Data Segment",
+
+                    purpose:
+                        "Carry the HTTP request reliably.",
+
+                    protocol:
+                        "TCP",
+
+                    type:
+                        "TCP Segment",
+
+                    source:
+                        "49152",
+
+                    destination:
+                        "443",
+
+                    seq:
+                        "1001",
+
+                    ack:
+                        "5001",
+
+                    flags:
+                        "ACK, PSH",
+
+                    payload:
+                        "GET request"
+                },
+
+                {
+                    title: "HTTP Response",
+
+                    desc:
+                        "The web server sends the requested webpage data through TCP.",
+
+                    app:
+                        "HTTP — 200 OK",
+
+                    transport:
+                        "TCP — Data Segments",
+
+                    purpose:
+                        "Transport webpage content reliably.",
+
+                    protocol:
+                        "TCP",
+
+                    type:
+                        "TCP Segment",
+
+                    source:
+                        "443",
+
+                    destination:
+                        "49152",
+
+                    seq:
+                        "5001",
+
+                    ack:
+                        "1120",
+
+                    flags:
+                        "ACK, PSH",
+
+                    payload:
+                        "HTML data"
+                },
+
+                {
+                    title: "TCP FIN",
+
+                    desc:
+                        "When communication is finished, TCP begins graceful connection termination.",
+
+                    app:
+                        "HTTP — Session finished",
+
+                    transport:
+                        "TCP — FIN Segment",
+
+                    purpose:
+                        "Begin connection teardown.",
+
+                    protocol:
+                        "TCP",
+
+                    type:
+                        "TCP Segment",
+
+                    source:
+                        "49152",
+
+                    destination:
+                        "443",
+
+                    seq:
+                        "1120",
+
+                    ack:
+                        "5200",
+
+                    flags:
+                        "FIN, ACK",
+
+                    payload:
+                        "0 bytes"
+                }
+
+            ]
+
+        },
+
+
+        mail: {
+
+            title: "Email Communication",
+
+            description:
+                "DNS lookup followed by TCP connection establishment and SMTP data transfer.",
+
+            steps: [
+
+                {
+                    title: "Mail Server DNS Lookup",
+                    desc:
+                        "The sender resolves the destination mail server.",
+                    app:
+                        "DNS — MX Lookup",
+                    transport:
+                        "UDP — DNS Datagram",
+                    purpose:
+                        "Find the destination mail server.",
+                    protocol:
+                        "UDP",
+                    type:
+                        "UDP Datagram",
+                    source:
+                        "49153",
+                    destination:
+                        "53",
+                    seq:
+                        "—",
+                    ack:
+                        "—",
+                    flags:
+                        "—",
+                    payload:
+                        "MX Query"
+                },
+
+                {
+                    title: "TCP SYN",
+                    desc:
+                        "The mail client begins a TCP connection to the SMTP server.",
+                    app:
+                        "SMTP — Preparing connection",
+                    transport:
+                        "TCP — SYN",
+                    purpose:
+                        "Establish reliable SMTP transport.",
+                    protocol:
+                        "TCP",
+                    type:
+                        "TCP Segment",
+                    source:
+                        "49153",
+                    destination:
+                        "587",
+                    seq:
+                        "2000",
+                    ack:
+                        "0",
+                    flags:
+                        "SYN",
+                    payload:
+                        "0 bytes"
+                },
+
+                {
+                    title: "TCP SYN-ACK",
+                    desc:
+                        "The SMTP server acknowledges the connection request.",
+                    app:
+                        "SMTP — Connection establishment",
+                    transport:
+                        "TCP — SYN-ACK",
+                    purpose:
+                        "Acknowledge connection.",
+                    protocol:
+                        "TCP",
+                    type:
+                        "TCP Segment",
+                    source:
+                        "587",
+                    destination:
+                        "49153",
+                    seq:
+                        "7000",
+                    ack:
+                        "2001",
+                    flags:
+                        "SYN, ACK",
+                    payload:
+                        "0 bytes"
+                },
+
+                {
+                    title: "SMTP Data Transfer",
+                    desc:
+                        "SMTP commands, sender, recipient and message data are carried reliably by TCP.",
+                    app:
+                        "SMTP — MAIL / RCPT / DATA",
+                    transport:
+                        "TCP — Data Segments",
+                    purpose:
+                        "Reliably transport email information.",
+                    protocol:
+                        "TCP",
+                    type:
+                        "TCP Segment",
+                    source:
+                        "49153",
+                    destination:
+                        "587",
+                    seq:
+                        "2001",
+                    ack:
+                        "7001",
+                    flags:
+                        "ACK, PSH",
+                    payload:
+                        "SMTP message"
+                },
+
+                {
+                    title: "SMTP Session Teardown",
+                    desc:
+                        "After the message is transferred, the TCP connection can be closed.",
+                    app:
+                        "SMTP — QUIT",
+                    transport:
+                        "TCP — FIN/ACK",
+                    purpose:
+                        "Gracefully terminate the connection.",
+                    protocol:
+                        "TCP",
+                    type:
+                        "TCP Segment",
+                    source:
+                        "49153",
+                    destination:
+                        "587",
+                    seq:
+                        "2400",
+                    ack:
+                        "7300",
+                    flags:
+                        "FIN, ACK",
+                    payload:
+                        "0 bytes"
+                }
+
+            ]
+
+        },
+
+
+        media: {
+
+            title: "Media Streaming",
+
+            description:
+                "Content discovery followed by transport of media data using application-layer HTTP over suitable transport mechanisms.",
+
+            steps: [
+
+                {
+                    title: "DNS Lookup",
+                    desc:
+                        "The streaming client resolves the media service domain.",
+                    app:
+                        "DNS — Domain Resolution",
+                    transport:
+                        "UDP — DNS Datagram",
+                    purpose:
+                        "Resolve streaming server address.",
+                    protocol:
+                        "UDP",
+                    type:
+                        "UDP Datagram",
+                    source:
+                        "49154",
+                    destination:
+                        "53",
+                    seq:
+                        "—",
+                    ack:
+                        "—",
+                    flags:
+                        "—",
+                    payload:
+                        "DNS Query"
+                },
+
+                {
+                    title: "TCP Connection",
+                    desc:
+                        "The client establishes TCP when reliable HTTP delivery is required.",
+                    app:
+                        "HTTP — Streaming Session",
+                    transport:
+                        "TCP — Three-Way Handshake",
+                    purpose:
+                        "Establish reliable transport.",
+                    protocol:
+                        "TCP",
+                    type:
+                        "TCP Segment",
+                    source:
+                        "49154",
+                    destination:
+                        "443",
+                    seq:
+                        "3000",
+                    ack:
+                        "0",
+                    flags:
+                        "SYN",
+                    payload:
+                        "0 bytes"
+                },
+
+                {
+                    title: "HTTP Media Request",
+                    desc:
+                        "The client requests media content or a media segment.",
+                    app:
+                        "HTTP — Media Request",
+                    transport:
+                        "TCP — Data Segment",
+                    purpose:
+                        "Carry the media request.",
+                    protocol:
+                        "TCP",
+                    type:
+                        "TCP Segment",
+                    source:
+                        "49154",
+                    destination:
+                        "443",
+                    seq:
+                        "3001",
+                    ack:
+                        "8001",
+                    flags:
+                        "ACK, PSH",
+                    payload:
+                        "Media request"
+                },
+
+                {
+                    title: "Media Data Transfer",
+                    desc:
+                        "Media data is transferred as a sequence of transport segments.",
+                    app:
+                        "HTTP — Media Data",
+                    transport:
+                        "TCP — Multiple Data Segments",
+                    purpose:
+                        "Transport media bytes.",
+                    protocol:
+                        "TCP",
+                    type:
+                        "TCP Segments",
+                    source:
+                        "443",
+                    destination:
+                        "49154",
+                    seq:
+                        "8001",
+                    ack:
+                        "3150",
+                    flags:
+                        "ACK, PSH",
+                    payload:
+                        "Media bytes"
+                },
+
+                {
+                    title: "TCP Teardown",
+                    desc:
+                        "The TCP session can be gracefully terminated when communication ends.",
+                    app:
+                        "HTTP — Streaming session ended",
+                    transport:
+                        "TCP — FIN/ACK",
+                    purpose:
+                        "Close the transport connection.",
+                    protocol:
+                        "TCP",
+                    type:
+                        "TCP Segment",
+                    source:
+                        "49154",
+                    destination:
+                        "443",
+                    seq:
+                        "3150",
+                    ack:
+                        "9500",
+                    flags:
+                        "FIN, ACK",
+                    payload:
+                        "0 bytes"
+                }
+
+            ]
+
+        }
+
+    };
+
+
+    /* =========================================================
+       STATE
+       ========================================================= */
+
+    let currentActivity = "web";
+    let currentStep = 0;
+    let timer = null;
+
+
+    /* =========================================================
+       SELECT ACTIVITY
+       ========================================================= */
+
+    function selectActivity(name, button) {
+
+        currentActivity = name;
+        currentStep = 0;
+
+        document
+            .querySelectorAll(".activity-btn")
+            .forEach(btn => btn.classList.remove("active"));
+
+        if (button) {
+            button.classList.add("active");
+        }
+
+        const data = activities[name];
+
+        document.getElementById("activityTitle").textContent =
+            data.title;
+
+        document.getElementById("activityDescription").textContent =
+            data.description;
+
+        renderTimeline();
+
+    }
+
+
+    /* =========================================================
+       RENDER TIMELINE
+       ========================================================= */
+
+    function renderTimeline() {
+
+        const data = activities[currentActivity];
+
+        const timeline =
+            document.getElementById("timeline");
+
+        timeline.innerHTML = "";
+
+        data.steps.forEach((step, index) => {
+
+            const item =
+                document.createElement("div");
+
+            item.className =
+                "timeline-item" +
+                (index === currentStep ? " active" : "");
+
+            item.onclick = () => {
+
+                currentStep = index;
+                renderTimeline();
+
+            };
+
+            item.innerHTML = `
+
+                <div class="timeline-dot">
+                    ${index + 1}
+                </div>
+
+                <div class="timeline-content">
+
+                    <div class="timeline-title">
+                        ${step.title}
+                    </div>
+
+                    <div class="timeline-desc">
+                        ${step.desc}
+                    </div>
+
+                    <div class="timeline-meta">
+
+                        <span class="meta">
+                            APP: ${step.app}
+                        </span>
+
+                        <span class="meta">
+                            TRANSPORT: ${step.transport}
+                        </span>
+
+                        <span class="meta">
+                            ${step.protocol}
+                        </span>
+
+                    </div>
+
+                </div>
+            `;
+
+            timeline.appendChild(item);
+
+        });
+
+        updateInspector();
+
+    }
+
+
+    /* =========================================================
+       UPDATE INSPECTOR
+       ========================================================= */
+
+    function updateInspector() {
+
+        const data =
+            activities[currentActivity];
+
+        const step =
+            data.steps[currentStep];
+
+        document.getElementById("stepLabel").textContent =
+            `Step ${currentStep + 1}`;
+
+        document.getElementById("progressText").textContent =
+            `${currentStep + 1} / ${data.steps.length}`;
+
+        const percentage =
+            ((currentStep + 1) / data.steps.length) * 100;
+
+        document.getElementById("progressBar").style.width =
+            percentage + "%";
+
+
+        document.getElementById("fProtocol").textContent =
+            step.protocol;
+
+        document.getElementById("transportProtocol").textContent =
+            step.protocol;
+
+        document.getElementById("fType").textContent =
+            step.type;
+
+        document.getElementById("fSource").textContent =
+            step.source;
+
+        document.getElementById("fDestination").textContent =
+            step.destination;
+
+        document.getElementById("fSeq").textContent =
+            step.seq;
+
+        document.getElementById("fAck").textContent =
+            step.ack;
+
+        document.getElementById("fFlags").textContent =
+            step.flags;
+
+        document.getElementById("fPayload").textContent =
+            step.payload;
+
+
+        document.getElementById("applicationLayer").textContent =
+            step.app;
+
+        document.getElementById("transportLayer").textContent =
+            step.transport;
+
+        document.getElementById("purposeLayer").textContent =
+            step.purpose;
+
+
+        /* Educational TCP control values */
+
+        if (step.protocol === "TCP") {
+
+            document.getElementById("rwnd").textContent =
+                currentStep < 3 ? "64 KB" : "48 KB";
+
+            document.getElementById("cwnd").textContent =
+                currentStep < 3 ? "10 KB" : "14.6 KB";
+
+            document.getElementById("ssthresh").textContent =
+                "32 KB";
+
+        } else {
+
+            document.getElementById("rwnd").textContent =
+                "N/A";
+
+            document.getElementById("cwnd").textContent =
+                "N/A";
+
+            document.getElementById("ssthresh").textContent =
+                "N/A";
+
+        }
+
+    }
+
+
+    /* =========================================================
+       NEXT / PREVIOUS
+       ========================================================= */
+
+    function nextStep() {
+
+        const data =
+            activities[currentActivity];
+
+        if (currentStep < data.steps.length - 1) {
+
+            currentStep++;
+
+            renderTimeline();
+
+        }
+
+    }
+
+
+    function previousStep() {
+
+        if (currentStep > 0) {
+
+            currentStep--;
+
+            renderTimeline();
+
+        }
+
+    }
+
+
+    /* =========================================================
+       AUTO PLAY
+       ========================================================= */
+
+    function autoPlay() {
+
+        clearInterval(timer);
+
+        timer = setInterval(() => {
+
+            const data =
+                activities[currentActivity];
+
+            if (currentStep >= data.steps.length - 1) {
+
+                clearInterval(timer);
+
+                return;
+
+            }
+
+            currentStep++;
+
+            renderTimeline();
+
+        }, 1800);
+
+    }
+
+
+    /* =========================================================
+       TCP PACKET LOSS
+       ========================================================= */
+
+    function simulateLoss() {
+
+        const box =
+            document.getElementById("packetLossStatus");
+
+        const message =
+            document.getElementById("lossMessage");
+
+        box.innerHTML =
+            "<strong>Step 1:</strong> TCP segment #104 was transmitted.";
+
+        setTimeout(() => {
+
+            box.innerHTML =
+                "<strong>Step 2:</strong> ⚠ Segment #104 was lost in the simulated network.";
+
+        }, 900);
+
+        setTimeout(() => {
+
+            box.innerHTML =
+                "<strong>Step 3:</strong> Receiver does not acknowledge the missing data.";
+
+        }, 1800);
+
+        setTimeout(() => {
+
+            box.innerHTML =
+                "<strong>Step 4:</strong> TCP detects the missing segment and schedules retransmission.";
+
+        }, 2700);
+
+        setTimeout(() => {
+
+            box.innerHTML =
+                "<strong>Step 5:</strong> 🔄 Segment #104 is retransmitted.";
+
+        }, 3600);
+
+        setTimeout(() => {
+
+            box.innerHTML =
+                "<strong>Step 6:</strong> ✓ TCP retransmission recovered the missing data. Educational simulation.";
+
+            message.innerHTML =
+                "<strong>TCP Reliability:</strong> " +
+                "The simulated loss demonstrates how acknowledgements and retransmission help TCP recover missing data.";
+
+        }, 4500);
+
+    }
+
+
+    /* =========================================================
+       RESET LOSS
+       ========================================================= */
+
+    function resetLoss() {
+
+        document.getElementById("packetLossStatus").innerHTML =
+            "Ready. Press <b>Simulate TCP Packet Loss</b> to demonstrate loss → detection → retransmission → recovery.";
+
+        document.getElementById("lossMessage").innerHTML =
+            "<strong>TCP Reliability:</strong> " +
+            "TCP uses acknowledgements, sequence numbers and retransmission to provide reliable byte-stream delivery.";
+
+    }
+
+
+    /* =========================================================
+       INITIALIZE
+       ========================================================= */
+
+    renderTimeline();
+
+</script>
+
 </body>
-
 </html>
