@@ -1694,6 +1694,7 @@ select {
 .log-tag.udp { background: rgba(56,189,248,0.2); color: #67e8f9; }
 .protocol-tag.tcp { background: rgba(96,165,250,0.16); color: #93c5fd; border-color: rgba(96,165,250,0.3); }
 .protocol-tag.udp { background: rgba(56,189,248,0.16); color: #67e8f9; border-color: rgba(56,189,248,0.3); }
+<<<<<<< HEAD
 
 /* Assignment 2 synchronized layer switch + deeper control signals */
 .layer-view-switcher{display:flex;align-items:center;gap:7px;margin:0 0 12px;padding:8px;border:1px solid var(--border-subtle);border-radius:10px;background:rgba(10,17,34,.72);flex-wrap:wrap}
@@ -1709,3 +1710,5 @@ select {
 .control-icon{display:grid;place-items:center;width:27px;height:27px;border-radius:7px;background:#102b43;color:#8bd8ff;font-weight:800;flex:none}
 .transport-control-card b{display:block;font-size:11px;color:#dcecff}.transport-control-card p{margin:3px 0;color:#b8d6ed;font:600 10px var(--font-mono)}.transport-control-card small{display:block;color:var(--text-dim);font-size:9px;line-height:1.35}
 @media(max-width:900px){.transport-control-row{grid-template-columns:1fr}.layer-sync-note{width:100%;margin-left:0}}
+=======
+>>>>>>> 107789194c9e97810cbe112f64d2bd4b9a118f61

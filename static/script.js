@@ -129,9 +129,12 @@
         transportSegment: document.getElementById("transportSegment"),
         transportMss: document.getElementById("transportMss"),
         transportCwnd: document.getElementById("transportCwnd"),
+<<<<<<< HEAD
         transportFlowSignal: document.getElementById("transportFlowSignal"),
         transportCongestionSignal: document.getElementById("transportCongestionSignal"),
         transportRecoverySignal: document.getElementById("transportRecoverySignal"),
+=======
+>>>>>>> 107789194c9e97810cbe112f64d2bd4b9a118f61
         transportReliability: document.getElementById("transportReliability"),
         transportNote: document.getElementById("transportNote"),
         transportLayerBadge: document.getElementById("transportLayerBadge"),
@@ -249,6 +252,7 @@
     // ==========================================================================
     // 4. TIMELINE RENDERING
     // ==========================================================================
+<<<<<<< HEAD
     function setLayerView(view) {
         const protocolDisplay = document.getElementById("protocolDisplay");
         const transportPanel = document.getElementById("transportPanel");
@@ -261,6 +265,8 @@
         btn.addEventListener("click", () => setLayerView(btn.dataset.layerView));
     });
 
+=======
+>>>>>>> 107789194c9e97810cbe112f64d2bd4b9a118f61
     function renderTimeline() {
         if (!elements.timelineTrack) return;
         elements.timelineTrack.innerHTML = "";
@@ -1036,7 +1042,10 @@
                 reliability: "Reliable, ordered byte stream",
                 state: extra.state || "ESTABLISHED",
                 congestionWindow: extra.cwnd || "10 MSS (simulated)",
+<<<<<<< HEAD
                 ssthresh: extra.ssthresh || "32 MSS (simulated)",
+=======
+>>>>>>> 107789194c9e97810cbe112f64d2bd4b9a118f61
                 note: extra.note || "TCP uses sequence numbers, acknowledgments, retransmission, flow control, and congestion control to provide reliable process-to-process delivery."
             };
         }
@@ -1210,9 +1219,12 @@
         elements.transportSegment.textContent = t.segmentNumber ? `#${t.segmentNumber}${t.segmentCount > 1 ? ` / ${t.segmentCount} segments` : ""}` : "—";
         elements.transportMss.textContent = t.mss ? `${t.mss} bytes` : "—";
         elements.transportCwnd.textContent = t.congestionWindow || "—";
+<<<<<<< HEAD
         if (elements.transportFlowSignal) elements.transportFlowSignal.textContent = t.transportProtocol === "TCP" ? `Receive Window (rwnd): ${t.window ?? "—"} bytes` : "UDP has no TCP receive-window mechanism";
         if (elements.transportCongestionSignal) elements.transportCongestionSignal.textContent = t.transportProtocol === "TCP" ? `${t.congestionWindow || "cwnd: —"} · ssthresh: ${t.ssthresh || "32 MSS (simulated)"}` : "UDP has no TCP congestion-control window";
         if (elements.transportRecoverySignal) elements.transportRecoverySignal.textContent = t.transportProtocol === "TCP" ? (String(t.flags).includes("ACK") ? "ACK present · cumulative acknowledgement" : "Waiting for ACK") : "No TCP ACK/retransmission state";
+=======
+>>>>>>> 107789194c9e97810cbe112f64d2bd4b9a118f61
         elements.transportReliability.textContent = t.reliability || "—";
         elements.transportNote.textContent = t.note || "—";
         if (elements.lossResult) elements.lossResult.className = "loss-result";
